@@ -1,0 +1,28 @@
+{
+  "name": "ideatic/angular-talk",
+  "description": "Angular Chat Room and Comments Engine",
+  "keywords": [
+    "js",
+    "angular",
+    "chat",
+    "comments",
+    "php"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Javier Marín",
+      "email": "contacto@ideatic.net",
+      "homepage": "http://www.ideatic.net/"
+    }
+  ],
+  "require": {
+    "php": ">=5.2"
+  },
+  "autoload": {
+    "psr-0": {
+      "AngularTalk_": "src/"
+    }
+  }
+}

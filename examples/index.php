@@ -1,0 +1,73 @@
+<?php
+require '../vendor/autoload.php';
+require 'libs/DummyProvider.php';
+
+$provider=new DummyProvider();
+$chat = new AngularTalk_Room('chat', $provider);
+$chat->set_mode(AngularTalk_Room::MODE_CHAT);
+$chat->ajaxEndpoint = '?chatEndpoint';
+$chat->sender = $provider->authorInfo(1, $chat);
+$chat->soundOnNew = array(
+    'audio/mpeg' => 'static/notification.mp3',
+    'audio/ogg' => 'static/notification.ogg'
+);
+$chat->debug = true;
+
+$comments = new AngularTalk_Room('comments', $provider);
+$comments->set_mode(AngularTalk_Room::MODE_CONVERSATION);
+$comments->ajaxEndpoint = '?commentsEndpoint';
+$comments->sender = $provider->authorInfo(1, $comments);
+$comments->debug = true;
+
+
+if (isset($_GET['chatEndpoint'])) {
+    $chat->listen();
+    return;
+}
+if (isset($_GET['commentsEndpoint'])) {
+    $comments->listen();
+    return;
+}
+?>
+<!DOCTYPE html>
+<html lang="en" ng-app="angular-talk">
+<head>
+    <meta charset="utf-8">
+    <title>angular-talk</title>
+
+    <link href="static/example.css" rel="stylesheet"/>
+    <link href="../assets/css/angular-talk.min.css" rel="stylesheet"/>
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet"/>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="page-header">
+        <h1>angular-talk</h1>
+    </div>
+    <blockquote>
+        Nice chat and comments engine written with PHP and Angular
+    </blockquote>
+    <h2>Chat room</h2>
+
+    <div id="chat">
+        <?php
+        echo $chat->render();
+        ?>
+    </div>
+
+    <h2>Comments engine</h2>
+
+    <div id="comments">
+        <?php
+        echo $comments->render();
+        ?></div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0/angular.min.js"></script>
+<script src="../assets/js/angular-talk.js"></script>
+</body>
+</html>
