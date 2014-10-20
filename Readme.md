@@ -7,6 +7,10 @@
 - Nice design
 - Real time updating without complicated WebSockets setup
 - Nested conversations
+- Notification sounds
+- Infinite scroll
+
+![](screenshot.png)
 
 ## Usage
 
