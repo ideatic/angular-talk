@@ -18,14 +18,25 @@ abstract class AngularTalk_DB_MessageProvider extends AngularTalk_MessageProvide
     }
 
     /**
-     * @inheritdoc
+     * @param AngularTalk_Message $message
+     *
+     * @return array
      */
-    public function create(AngularTalk_Room $room, AngularTalk_Message $message)
+    private function _prepare_message(AngularTalk_Message $message)
     {
         $dbData = get_object_vars($message);
 
         $dbData['authorID'] = $message->author->id;
         unset($dbData['author']);
+        return $dbData;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function create(AngularTalk_Room $room, AngularTalk_Message $message)
+    {
+        $dbData = $this->_prepare_message($message);
 
         $success = $this->_link->insert($this->_table, $dbData);
 
@@ -42,19 +53,30 @@ abstract class AngularTalk_DB_MessageProvider extends AngularTalk_MessageProvide
      */
     public function get(AngularTalk_Room $room, $sinceID, $dir = 'ASC', $count = 0)
     {
-        $channel = $this->_link->escape( $room->channel);
+        $channel = $this->_link->escape($room->channel);
         $since = $this->_link->escape($sinceID);
 
-        if ($dir != 'ASC') {
-            $dir = 'DESC';
+        switch ($dir) {
+            case 'DESC':
+                $op = '<';
+                break;
+
+            case 'ID':
+                $op = '=';
+                break;
+
+            default:
+                $dir = 'ASC';
+                $op = '>';
+                break;
+
         }
 
-        $op = $dir == 'ASC' ? '>' : '<';
         $query = "SELECT * FROM {$this->_table} WHERE channel = $channel && id $op $since";
 
         if ($count > 0) {
-            $qdir= $dir == 'ASC' ? 'DESC' : 'ASC';
-            $query .= "ORDER BY date $qdir LIMIT $count";
+            $qdir = $dir == 'ASC' ? 'DESC' : 'ASC';
+            $query .= " ORDER BY date $qdir LIMIT $count";
         }
 
         $data = $this->_link->query($query);
@@ -74,5 +96,39 @@ abstract class AngularTalk_DB_MessageProvider extends AngularTalk_MessageProvide
         }
 
         return $messages;
+    }
+
+
+    /**
+     * @inheritdoc
+     */
+    public function update(AngularTalk_Room $room, AngularTalk_Message $message)
+    {
+        $dbData = $this->_prepare_message($message);
+        $set = array();
+        foreach ($dbData as $k => $v) {
+            $set[$this->_link->escape($k)] = $this->_link->escape($v);
+        }
+
+        $id = $this->_link->escape($message->id);
+        $set = implode(',', $set);
+        $this->_link->query("UPDATE {$this->_table} SET $set WHERE id = $id");
+
+        return $message;
+    }
+
+
+    /**
+     * @inheritdoc
+     */
+    public function delete(AngularTalk_Room $room, $messageID)
+    {
+        if (!$messageID) {
+            throw new InvalidArgumentException('The given message is not saved.');
+        }
+
+        $channel = $this->_link->escape($room->channel);
+        $id = $this->_link->escape($messageID);
+        return $this->_link->query("DELETE FROM {$this->_table} WHERE channel = $channel && id = $id");
     }
 }

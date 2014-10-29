@@ -145,6 +145,9 @@ class AngularTalk_Room
         'reply' => 'Reply',
         'inReplyTo' => 'In reply to: ',
         'retrySend' => "This message didn't send. Check your internet connection and click to try again.",
+        'edit' => 'Edit',
+        'delete' => 'Delete',
+        'save' => 'Save',
     );
 
     public function __construct($channel, AngularTalk_MessageProvider $provider)
@@ -205,9 +208,9 @@ class AngularTalk_Room
         try {
             switch (strtolower($_REQUEST['method'])) {
                 case 'messages':
-                    $since = isset($_GET['since']) ? $_GET['since'] : 0;
-                    $dir = isset($_GET['dir']) && $_GET['dir'] == 'ASC' ? 'ASC' : 'DESC';
-                    $count = isset($_GET['count']) && is_numeric($_GET['count']) ? $_GET['count'] : 25;
+                    $since = isset($_REQUEST['since']) ? $_REQUEST['since'] : 0;
+                    $dir = isset($_REQUEST['dir']) && $_REQUEST['dir'] == 'ASC' ? 'ASC' : 'DESC';
+                    $count = isset($_REQUEST['count']) && is_numeric($_REQUEST['count']) ? $_REQUEST['count'] : 25;
                     $response['data'] = $this->_provider->get($this, $since, $dir, $count);
                     break;
 
@@ -240,6 +243,39 @@ class AngularTalk_Room
 
 
                     $response['data'] = $this->_provider->create($this, $message);
+                    break;
+
+                case 'update':
+                    if (!$this->sender->isModerator) {
+                        $response['message'] = 'Unauthorized';
+                        throw new RuntimeException;
+                    }
+
+                    //Load current message
+                    $message = $this->_provider->get($this, $request->id, 'ID');
+
+                    if (!$message) {
+                        $response['message'] = 'Invalid message ID';
+                        throw new RuntimeException;
+                    }
+
+                    //Set message new values
+                    $message->content = $request->content;
+
+                    $response['data'] = $this->_provider->update($this, $message);
+
+                    break;
+
+                case 'delete':
+                    if ($this->sender->isModerator) {
+                        if (!$this->_provider->delete($this, $request->id)) {
+                            $response['message'] = 'Delete error';
+                            throw new InvalidArgumentException;
+                        }
+                    } else {
+                        $response['message'] = 'Unauthorized';
+                        throw new RuntimeException;
+                    }
                     break;
 
                 default:
@@ -299,7 +335,11 @@ class AngularTalk_Room
                     ng-keypress="messageKeyPress($event)"
                     rows="3" cols="1"
                     placeholder="{{::settings.strings.messagePlaceholder}}"></textarea>
-                <button type="button" class="submit" ng-click="submit()">{{::settings.strings.submit}}</button>
+
+                <div style="text-align: right">
+                    <button type="button" class="submit" ng-click="submit()" ng-disabled="!content">{{editingMessage ? settings.strings.save : settings.strings.submit}}
+                    </button>
+                </div>
             </div>
         </div>
         <?php
@@ -311,7 +351,7 @@ class AngularTalk_Room
         ?>
         <!-- Moment separator (every 30min) -->
         <div
-            ng-repeat-start="message in (filteredMessages = (messages <?= $this->allowReplies?'| filter:{replyToID:'.$in_reply_to.'}:true':'' ?> | orderBy:'+date'))"
+            ng-repeat-start="message in (filteredMessages = (messages <?= $this->allowReplies ? '| filter:{replyToID:' . $in_reply_to . '}:true' : '' ?> | orderBy:'+date'))"
             class="moment"
             ng-show="settings.groupMessages && ($index==0 || (message.date-filteredMessages[$index - 1].date)>30000)">
             <time class="relative" datetime="{{::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}">{{::message.date*1000 | date:'medium'}}</time>
@@ -332,7 +372,7 @@ class AngularTalk_Room
             <!-- Message body -->
             <div class="message-wrapper">
                 <div class="message-body" title="{{::message.date*1000 | date:'medium'}}">
-                    {{::message.content}}
+                    {{message.content}}
                     <div class="message-info" ng-show="!settings.groupMessages || message.isActive || message.isSending || message.isError">
                         <!-- Error -->
                               <span ng-show="message.isError">
@@ -367,6 +407,20 @@ class AngularTalk_Room
                                 <span class="bullet">•</span>
                               </span>
                         <?php endif; ?>
+
+                        <!-- Edit -->
+                         <span ng-show="settings.sender.isModerator">
+                                <a class="edit" ng-click="edit(message)">
+                                    <i class="icon icon-edit fa fa-edit"></i>
+                                    {{::settings.strings.edit}}
+                                </a>
+                                <span class="bullet">•</span>
+                                <a class="delete" ng-click="delete(message)">
+                                    <i class="icon icon-remove fa fa-remove"></i>
+                                    {{::settings.strings.delete}}
+                                </a>
+                                <span class="bullet">•</span>
+                              </span>
 
                         <!-- Date -->
                         <time class="relative" datetime="{{::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}">{{::message.date*1000 | date:'medium'}}</time>

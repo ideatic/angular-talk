@@ -2,11 +2,12 @@
 require '../vendor/autoload.php';
 require 'libs/DummyProvider.php';
 
-$provider=new DummyProvider();
+$provider = new DummyProvider();
 $chat = new AngularTalk_Room('chat', $provider);
 $chat->set_mode(AngularTalk_Room::MODE_CHAT);
 $chat->ajaxEndpoint = '?chatEndpoint';
 $chat->sender = $provider->authorInfo(1, $chat);
+$chat->sender->isModerator = true;
 $chat->soundOnNew = array(
     'audio/mpeg' => 'static/notification.mp3',
     'audio/ogg' => 'static/notification.ogg'
@@ -17,6 +18,7 @@ $comments = new AngularTalk_Room('comments', $provider);
 $comments->set_mode(AngularTalk_Room::MODE_CONVERSATION);
 $comments->ajaxEndpoint = '?commentsEndpoint';
 $comments->sender = $provider->authorInfo(1, $comments);
+$comments->sender->isModerator = true;
 $comments->debug = true;
 
 

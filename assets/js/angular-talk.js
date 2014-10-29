@@ -24,15 +24,23 @@ angular.module('angular-talk', [])
             }
 
             //Compose and send message
-            var message = {
-                author: $scope.settings.sender,
-                content: $scope.content,
-                date: new Date / 1E3 | 0
-            };
-            if ($scope.replyingTo) {
-                message.replyToID = $scope.replyingTo.id;
+            var message;
+            if ($scope.editingMessage) {
+                message = $scope.editingMessage;
+                message.content = $scope.content;
+                $scope.editingMessage = null;
+            } else {
+                message = {
+                    author: $scope.settings.sender,
+                    content: $scope.content,
+                    date: new Date / 1E3 | 0
+                };
+                if ($scope.replyingTo) {
+                    message.replyToID = $scope.replyingTo.id;
+                }
+                $scope.messages.push(message);
             }
-            $scope.messages.push(message);
+
             $scope.sendMessage(message);
 
             //Clear content
@@ -47,7 +55,7 @@ angular.module('angular-talk', [])
 
             $http.post($scope.settings.ajaxEndpoint, message, {
                 params: {
-                    method: 'submit'
+                    method: message.id ? 'update' : 'submit'
                 }
             }).
                 success(function (data) {
@@ -76,6 +84,28 @@ angular.module('angular-talk', [])
         $scope.replyingTo = null;
         $scope.reply = function (message) {
             $scope.replyingTo = message;
+        };
+
+        //Edit message
+        $scope.editingMessage = null;
+        $scope.edit = function (message) {
+            $scope.editingMessage = message;
+            $scope.content = message.content;
+        };
+
+        //Delete message
+        $scope.delete = function (message) {
+            $http.post($scope.settings.ajaxEndpoint, message, {
+                params: {
+                    method: 'delete'
+                }
+            }).
+                success(function () {
+                    var i = $scope.messages.indexOf(message);
+                    if (i >= 0) {
+                        $scope.messages.splice(i, 1);
+                    }
+                });
         };
 
         //Update messages loop

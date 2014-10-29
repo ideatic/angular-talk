@@ -10,6 +10,7 @@ class AngularTalk_Author
     public $icon;
     public $email;
     public $url;
+    public $isModerator = false;
 
     public function __construct($id = 0, $name = '', $icon = '')
     {

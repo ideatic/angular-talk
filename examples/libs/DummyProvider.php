@@ -23,7 +23,7 @@ class DummyProvider extends AngularTalk_MessageProvider
         $messages = array();
         srand(mt_rand());
 
-        for ($i = 0; $i < ($sinceID == 0 ? 25 : mt_rand(0, 3)); $i++) {
+        for ($i = 0; $i < ($sinceID == 0 || $dir == 'ID' ? 25 : mt_rand(0, 3)); $i++) {
             $content = array(
                 '¡Hola Mundo!',
                 'Hello World!',
@@ -38,6 +38,7 @@ class DummyProvider extends AngularTalk_MessageProvider
             );
 
             $message = new AngularTalk_Message();
+            $message->channel = $room->channel;
             $message->id = $sinceID + $i + 1;
             $message->author = $this->authorInfo(mt_rand(1, 4), $room);
             $message->replyToID = 0;
@@ -48,7 +49,7 @@ class DummyProvider extends AngularTalk_MessageProvider
         }
 
 
-        return $messages;
+        return $dir == 'ID' ? reset($messages) : $messages;
     }
 
     /**
@@ -68,5 +69,31 @@ class DummyProvider extends AngularTalk_MessageProvider
         $author->icon = 'static/icons/face' . $id . '.png';
 
         return $author;
+    }
+
+    /**
+     * Update the given message
+     *
+     * @param AngularTalk_Room    $room    Room where thew new message should be created.
+     * @param AngularTalk_Message $message Message content
+     *
+     * @return AngularTalk_Message Edited message
+     */
+    public function update(AngularTalk_Room $room, AngularTalk_Message $message)
+    {
+        return $message;
+    }
+
+    /**
+     * Delete the given message
+     *
+     * @param AngularTalk_Room    $room    Room where thew new message should be created.
+     * @param AngularTalk_Message $message Message content
+     *
+     * @return bool
+     */
+    public function delete(AngularTalk_Room $room, $messageID)
+    {
+        return true;
     }
 }
