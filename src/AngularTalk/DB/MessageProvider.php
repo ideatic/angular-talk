@@ -95,7 +95,7 @@ abstract class AngularTalk_DB_MessageProvider extends AngularTalk_MessageProvide
             $messages[] = $message;
         }
 
-        return $messages;
+        return $dir == 'ID' ? reset($messages) : $messages;
     }
 
 
@@ -107,11 +107,11 @@ abstract class AngularTalk_DB_MessageProvider extends AngularTalk_MessageProvide
         $dbData = $this->_prepare_message($message);
         $set = array();
         foreach ($dbData as $k => $v) {
-            $set[$this->_link->escape($k)] = $this->_link->escape($v);
+            $set[] = "`$k` = " . $this->_link->escape($v);
         }
 
         $id = $this->_link->escape($message->id);
-        $set = implode(',', $set);
+        $set = implode(', ', $set);
         $this->_link->query("UPDATE {$this->_table} SET $set WHERE id = $id");
 
         return $message;
@@ -129,6 +129,9 @@ abstract class AngularTalk_DB_MessageProvider extends AngularTalk_MessageProvide
 
         $channel = $this->_link->escape($room->channel);
         $id = $this->_link->escape($messageID);
-        return $this->_link->query("DELETE FROM {$this->_table} WHERE channel = $channel && id = $id");
+
+        $this->_link->query("DELETE FROM {$this->_table} WHERE channel = $channel && id = $id");
+
+        return true;
     }
 }
