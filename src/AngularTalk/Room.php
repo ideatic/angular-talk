@@ -148,6 +148,7 @@ class AngularTalk_Room
         'edit' => 'Edit',
         'delete' => 'Delete',
         'save' => 'Save',
+        'delete_confirm'=> 'Are you sure? This cannot be undone'
     );
 
     public function __construct($channel, AngularTalk_MessageProvider $provider)

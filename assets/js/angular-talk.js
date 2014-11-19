@@ -95,17 +95,19 @@ angular.module('angular-talk', [])
 
         //Delete message
         $scope.delete = function (message) {
-            $http.post($scope.settings.ajaxEndpoint, message, {
-                params: {
-                    method: 'delete'
-                }
-            }).
-                success(function () {
-                    var i = $scope.messages.indexOf(message);
-                    if (i >= 0) {
-                        $scope.messages.splice(i, 1);
+            if (confirm($scope.settings.strings.delete_confirm)) {
+                $http.post($scope.settings.ajaxEndpoint, message, {
+                    params: {
+                        method: 'delete'
                     }
-                });
+                }).
+                    success(function () {
+                        var i = $scope.messages.indexOf(message);
+                        if (i >= 0) {
+                            $scope.messages.splice(i, 1);
+                        }
+                    });
+            }
         };
 
         //Update messages loop
