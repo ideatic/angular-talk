@@ -148,7 +148,7 @@ class AngularTalk_Room
         'edit' => 'Edit',
         'delete' => 'Delete',
         'save' => 'Save',
-        'delete_confirm'=> 'Are you sure? This cannot be undone'
+        'delete_confirm' => 'Are you sure? This cannot be undone'
     );
 
     public function __construct($channel, AngularTalk_MessageProvider $provider)
@@ -302,138 +302,44 @@ class AngularTalk_Room
     }
 
     /**
+     * Get the current room config for the angularTalk directive
+     * @return array
+     */
+    public function get_config()
+    {
+        $settings = get_object_vars($this);
+        unset($settings['_provider']);
+
+        return $settings;
+    }
+
+    /**
      * Renderiza la sala de chat con los parámetros de la instancia actual
      * @return html
      */
     public function render()
     {
-        $settings = get_object_vars($this);
-        unset($settings['_provider']);
+        $attrs = array();
+        foreach ($this->get_config() as $name => $value) {
+            if (is_bool($value)) {
+                if ($value === true) {
+                    $attrs[] = $this->_decamelize($name, '-');
+                }
+            } else {
+                $attrs[] = $this->_decamelize($name, '-') . '="' . htmlspecialchars(is_scalar($value) ? $value : json_encode($value)) . '"';
+            }
+        }
 
         ob_start();
         ?>
-        <div
-            class="angular-talk"
-            ng-controller="AngularTalkController"
-            ng-init="settings = <?= htmlspecialchars(json_encode($settings)) ?>">
-            <div class="heading"></div>
-            <div class="messages" angular-talk-scroll ng-class="{faces:settings.showFaces}" on-scroll="onScroll(offset)">
-                <!-- Loader (when scrolling to top or empty messages) -->
-                <div class="main-loader" ng-show="loadingOlder">
-                    <span class="loader icon icon-circle-o-notch icon-spin fa fa-circle-o-notch fa-spin"></span>
-                </div>
-
-                <?= $this->_render_messages(0) ?>
-            </div>
-            <!-- Send panel -->
-            <div class="footer">
-                <div class="reply-to" ng-show="replyingTo">
-                    {{::settings.strings.inReplyTo}} <a ng-click="show(replyingTo)">{{replyingTo.author.name}}</a>
-                    <a class="cancel" ng-click="replyingTo=null">&times;</a>
-                </div>
-                <textarea
-                    ng-model="content"
-                    ng-keypress="messageKeyPress($event)"
-                    rows="3" cols="1"
-                    placeholder="{{::settings.strings.messagePlaceholder}}"></textarea>
-
-                <div style="text-align: right">
-                    <button type="button" class="submit" ng-click="submit()" ng-disabled="!content">{{editingMessage ? settings.strings.save : settings.strings.submit}}
-                    </button>
-                </div>
-            </div>
+        <div class="angular-talk" <?= implode(' ', $attrs) ?>>
         </div>
         <?php
         return ob_get_clean();
     }
 
-    private function _render_messages($level, $in_reply_to = 0)
+    private function _decamelize($str, $separator = ' ')
     {
-        ?>
-        <!-- Moment separator (every 30min) -->
-        <div
-            ng-repeat-start="message in (filteredMessages = (messages <?= $this->allowReplies ? '| filter:{replyToID:' . $in_reply_to . '}:true' : '' ?> | orderBy:'+date'))"
-            class="moment"
-            ng-show="settings.groupMessages && ($index==0 || (message.date-filteredMessages[$index - 1].date)>30000)">
-            <time class="relative" datetime="{{::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}">{{::message.date*1000 | date:'medium'}}</time>
-        </div>
-
-        <!-- Message content -->
-        <div ng-repeat-end class="message" id="{{getMessageID(message)}}" ng-class="{
-                'from-sender': message.author.id==settings.sender.id,
-                reversed:settings.reverseSenderMessages && message.author.id==settings.sender.id,
-                active:message.isActive,
-                error:message.isError}" ng-click="message.isActive=!message.isActive">
-
-            <!-- Icon -->
-            <a ng-show="settings.showFaces" class="message-img" ng-href="{{::message.author.href}}" title="{{::message.author.name}}">
-                <img ng-src="{{::message.author.icon}}" alt="{{::message.author.name}}">
-            </a>
-
-            <!-- Message body -->
-            <div class="message-wrapper">
-                <div class="message-body" title="{{::message.date*1000 | date:'medium'}}">
-                    {{message.content}}
-                    <div class="message-info" ng-show="!settings.groupMessages || message.isActive || message.isSending || message.isError">
-                        <!-- Error -->
-                              <span ng-show="message.isError">
-                                    <a class="retry-send" ng-click="sendMessage(message)">
-                                        <i class="icon icon-warning fa fa-warning"></i>
-                                        {{::settings.strings.retrySend}}
-                                    </a>
-                                    <span class="bullet">•</span>
-                                </span>
-
-                        <!-- Loader -->
-                           <span ng-show="message.isSending">
-                                    <span class="loader icon icon-circle-o-notch icon-spin fa fa-circle-o-notch fa-spin"></span>
-                                    <span class="bullet">•</span>
-                           </span>
-
-                        <!-- Author -->
-                                <span ng-show="settings.showUserName">
-                                    <a class="author" ng-href="{{::message.author.href}}">
-                                        {{::message.author.name}}
-                                    </a>
-                                    <span class="bullet">•</span>
-                                </span>
-
-                        <!-- Reply -->
-                        <?php if ($level < $this->replyLevels - 1): ?>
-                            <span ng-show="settings.allowReplies && message.id">
-                                <a class="reply" ng-click="reply(message)">
-                                    <i class="icon icon-reply fa fa-reply"></i>
-                                    {{::settings.strings.reply}}
-                                </a>
-                                <span class="bullet">•</span>
-                              </span>
-                        <?php endif; ?>
-
-                        <!-- Edit -->
-                         <span ng-show="settings.sender.isModerator">
-                                <a class="edit" ng-click="edit(message)">
-                                    <i class="icon icon-edit fa fa-edit"></i>
-                                    {{::settings.strings.edit}}
-                                </a>
-                                <span class="bullet">•</span>
-                                <a class="delete" ng-click="delete(message)">
-                                    <i class="icon icon-remove fa fa-remove"></i>
-                                    {{::settings.strings.delete}}
-                                </a>
-                                <span class="bullet">•</span>
-                              </span>
-
-                        <!-- Date -->
-                        <time class="relative" datetime="{{::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}">{{::message.date*1000 | date:'medium'}}</time>
-                    </div>
-
-                </div>
-
-                <?php if ($this->allowReplies && $level < $this->replyLevels - 1): ?>
-                    <?= $this->_render_messages($level + 1, 'message.id') ?>
-                <?php endif; ?>
-            </div>
-        </div>
-    <?php
+        return strtolower(preg_replace('/([a-z])([A-Z])/', '$1' . $separator . '$2', $str));
     }
 }

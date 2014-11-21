@@ -1,0 +1,83 @@
+<!-- Moment separator (every 30min) -->
+<div ng-repeat-start="message in (listingMessages = (filteredMessages || (settings.allowReplies ? getReplies(0) : messages)) | orderBy:'+date')"
+     class="moment"
+     ng-show="settings.groupMessages && ($index==0 || (message.date - previousMessage(message).date)>30000)">
+    <time class="relative" datetime="{{::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}">{{::message.date*1000 | date:'medium'}}</time>
+</div>
+
+<!-- Message content -->
+<div ng-repeat-end class="message" id="{{getMessageID(message)}}" ng-class="{
+                'from-sender': message.author.id==settings.sender.id,
+                reversed:settings.reverseSenderMessages && message.author.id==settings.sender.id,
+                active:message.isActive,
+                error:message.isError}" ng-click="message.isActive=!message.isActive">
+
+    <!-- Icon -->
+    <a ng-show="settings.showFaces" class="message-img" ng-href="{{::message.author.href}}" title="{{::message.author.name}}">
+        <img ng-src="{{::message.author.icon}}" alt="{{::message.author.name}}">
+    </a>
+
+    <!-- Message body -->
+    <div class="message-wrapper">
+        <div class="message-body" title="{{::message.date*1000 | date:'medium'}}">
+            {{message.content}}
+            <div class="message-info" ng-show="!settings.groupMessages || message.isActive || message.isSending || message.isError">
+                <!-- Error -->
+              <span ng-show="message.isError">
+                    <a class="retry-send" ng-click="sendMessage(message)">
+                        <i class="icon icon-warning fa fa-warning"></i>
+                        {{::settings.strings.retrySend}}
+                    </a>
+                    <span class="bullet">•</span>
+                </span>
+
+                <!-- Loader -->
+               <span ng-show="message.isSending">
+                        <span class="loader icon icon-circle-o-notch icon-spin fa fa-circle-o-notch fa-spin"></span>
+                        <span class="bullet">•</span>
+               </span>
+
+                <!-- Author -->
+                <span ng-show="settings.showUserName">
+                    <a class="author" ng-href="{{::message.author.href}}">
+                        {{::message.author.name}}
+                    </a>
+                    <span class="bullet">•</span>
+                </span>
+
+                <!-- Reply -->
+                <span ng-show="replyLevel < settings.replyLevels-1 && settings.allowReplies && message.id">
+                    <a class="reply" ng-click="reply(message)">
+                        <i class="icon icon-reply fa fa-reply"></i>
+                        {{::settings.strings.reply}}
+                    </a>
+                    <span class="bullet">•</span>
+                </span>
+
+                <!-- Edit -->
+                 <span ng-show="settings.sender.isModerator">
+                        <a class="edit" ng-click="edit(message)">
+                            <i class="icon icon-edit fa fa-edit"></i>
+                            {{::settings.strings.edit}}
+                        </a>
+                        <span class="bullet">•</span>
+                        <a class="delete" ng-click="delete(message)">
+                            <i class="icon icon-remove fa fa-remove"></i>
+                            {{::settings.strings.delete}}
+                        </a>
+                        <span class="bullet">•</span>
+                 </span>
+
+                <!-- Date -->
+                <time class="relative" datetime="{{::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}">{{::message.date*1000 | date:'medium'}}</time>
+            </div>
+
+        </div>
+
+        <!-- Replies -->
+        <ng-include
+                ng-if="settings.allowReplies && replyLevel < settings.replyLevels-1 && (filteredMessages = getReplies(message.id)).length>0"
+                src="'angularTalk/messages.html'"
+                ng-init="replyLevel=replyLevel+1"></ng-include>
+    </div>
+</div>

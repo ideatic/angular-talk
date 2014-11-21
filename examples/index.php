@@ -69,7 +69,7 @@ if (isset($_GET['commentsEndpoint'])) {
         ?></div>
 </div>
 
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0/angular.min.js"></script>
-<script src="../assets/js/angular-talk.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.3/angular.min.js"></script>
+<script src="../assets/js/angular-talk.tpls.js"></script>
 </body>
 </html>

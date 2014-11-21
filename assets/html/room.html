@@ -1,0 +1,26 @@
+<div class="heading"></div>
+<div class="messages" angular-talk-scroll ng-class="{faces:settings.showFaces}" on-scroll="onScroll(offset)">
+    <!-- Loader (when scrolling to top or empty messages) -->
+    <div class="main-loader" ng-show="loadingOlder">
+        <span class="loader icon icon-circle-o-notch icon-spin fa fa-circle-o-notch fa-spin"></span>
+    </div>
+
+    <ng-include src="'angularTalk/messages.html'" ng-init="replyLevel=0"></ng-include>
+</div>
+<!-- Send panel -->
+<div class="footer">
+    <div class="reply-to" ng-show="replyingTo">
+        {{::settings.strings.inReplyTo}} <a ng-click="show(replyingTo)">{{replyingTo.author.name}}</a>
+        <a class="cancel" ng-click="replyingTo=null">&times;</a>
+    </div>
+                <textarea
+                        ng-model="content"
+                        ng-keypress="messageKeyPress($event)"
+                        rows="3" cols="1"
+                        placeholder="{{::settings.strings.messagePlaceholder}}"></textarea>
+
+    <div style="text-align: right">
+        <button type="button" class="submit" ng-click="submit()" ng-disabled="!content">{{editingMessage ? settings.strings.save : settings.strings.submit}}
+        </button>
+    </div>
+</div>
