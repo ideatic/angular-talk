@@ -31,6 +31,19 @@
       max-width: 100%;
     }
 
+    .tools {
+      .submit {
+        float: right;
+      }
+
+      //Clear
+      &:after {
+        content: "";
+        display: table;
+        clear: both;
+      }
+    }
+
     //Clear
     &:after {
       content: "";
@@ -221,7 +234,7 @@
     font-size: 12px;
     display: block;
     width: 100%;
-    min-width: 150px;
+    min-width: 200px;
     color: #555;
     background-color: #fff;
     border: 1px solid #ddd;
@@ -274,6 +287,16 @@
       content: "";
       display: table;
       clear: both;
+    }
+  }
+
+  .canel {
+    color: #999;
+    font-size: 13px;
+
+    .cancel {
+      font-weight: bold;
+      font-size: 15px;
     }
   }
 

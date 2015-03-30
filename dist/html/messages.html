@@ -78,11 +78,13 @@
             <!-- Message edit -->
             <div ng-show="message.isEditing">
              <textarea ng-model="message.content"
-                       ng-keypress="messageKeyPress($event)"
-                       rows="3" cols="1"
+                       ng-keyup="messageKeyPress($event)"
+                       ng-focus="current.message = message"
                        placeholder="{{ ::settings.strings.messagePlaceholder }}"></textarea>
 
-                <div style="text-align: right">
+                <div class="tools">
+                    <a ng-click="cancelEdit(message)">{{ ::settings.strings.cancel }}</a>
+
                     <button type="button" class="submit" ng-click="save(message)" ng-disabled="!message.content">
                         {{message.id ? settings.strings.save : settings.strings.submit}}
                     </button>

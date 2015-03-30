@@ -70,8 +70,8 @@ angular.module('angularTalk', [])
                     $scope.content = '';
                 };
 
-                $scope.submit = function submit(message) {
-                    message = angular.extend(message, {
+                $scope.submit = function submit() {
+                    var message = angular.extend($scope.message, {
                         author: settings.sender,
                         date: new Date / 1E3 | 0
                     });
@@ -84,11 +84,16 @@ angular.module('angularTalk', [])
 
 
                 //Send on Enter
+                $scope.current = {};
                 $scope.messageKeyPress = function messageKeyPress($event) {
                     if (settings.submitOnEnter && $event.keyCode == 13) {
                         $scope.submit();
                         $event.preventDefault();
                         return false;
+                    } else if ($event.keyCode == 27) {
+                        //Cancel reply
+                        $scope.cancelEdit($scope.current.message);
+                        $scope.current.message = null;
                     }
                 };
 
@@ -108,29 +113,40 @@ angular.module('angularTalk', [])
                     message.isEditing = true;
                 };
 
+                $scope.cancelEdit = function cancelEdit(message) {
+                    message.isEditing = false;
+                    if (!message.id) {
+                        $scope.delete(message);
+                    }
+                };
+
                 //Delete message
                 $scope.delete = function deleteFn(message) {
-                    if (confirm(settings.strings.delete_confirm)) {
+                    function removeFromListing() {
+                        function deleteInCollection(item, collection) {
+                            var i = collection.indexOf(item);
+                            if (i >= 0) {
+                                collection.splice(i, 1);
+                            }
+                            angular.forEach(collection, function (m) {
+                                if (m.$replies) {
+                                    deleteInCollection(item, m.$replies);
+                                }
+                            });
+                        }
+
+                        deleteInCollection(message, $scope.messages);
+
+                    }
+
+                    if (!message.id) {
+                        removeFromListing();
+                    } else if (confirm(settings.strings.delete_confirm)) {
                         $http.post(settings.ajaxEndpoint, message, {
                             params: {
                                 method: 'delete'
                             }
-                        }).success(function () {
-                            function deleteInCollection(item, collection) {
-                                var i = collection.indexOf(item);
-                                if (i >= 0) {
-                                    collection.splice(i, 1);
-                                }
-                                angular.forEach(collection, function (m) {
-                                    if (m.$replies) {
-                                        deleteInCollection(item, m.$replies);
-                                    }
-                                });
-                            }
-
-                            deleteInCollection(message, $scope.messages);
-
-                        });
+                        }).success(removeFromListing);
                     }
                 };
 
@@ -181,6 +197,8 @@ angular.module('angularTalk', [])
                     return found;
                 };
 
+                var waitingParent = [];
+
                 function appendMessage(message) {
                     if (message.id) {
                         //Check if message is duplicated
@@ -200,13 +218,19 @@ angular.module('angularTalk', [])
                     //Add to message tree
                     message.$replies = [];
                     if (message.replyToID) {
-                        var parent = findMessageByID(message.replyToID);
-                        if (parent) {
-                            parent.$replies.push(message);
-                        }
+                        waitingParent.push(message);
                     } else {
                         $scope.messages.push(message);
                     }
+
+                    //Find pending parents
+                    angular.forEach(waitingParent, function (m, i) {
+                        var parent = findMessageByID(m.replyToID);
+                        if (parent) {
+                            parent.$replies.push(m);
+                            waitingParent.splice(i, 1);
+                        }
+                    });
 
                     $scope.$emit('messageReceived', message);
                 }

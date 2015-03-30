@@ -10,7 +10,7 @@
 <!-- Send panel -->
 <div class="footer">
     <textarea ng-model="message.content"
-              ng-keypress="messageKeyPress($event)"
+              ng-keyup="messageKeyPress($event)"
               rows="3" cols="1"
               placeholder="{{ ::settings.strings.messagePlaceholder }}"></textarea>
 

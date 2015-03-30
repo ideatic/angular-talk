@@ -147,6 +147,7 @@ class AngularTalk_Room
         'edit'               => 'Edit',
         'delete'             => 'Delete',
         'save'               => 'Save',
+        'cancel'             => 'Cancel',
         'delete_confirm'     => 'Are you sure? This cannot be undone'
     ];
 
@@ -255,7 +256,8 @@ class AngularTalk_Room
                         $response['message'] = 'Invalid message ID';
                         throw new RuntimeException;
                     }
-                    if (!$this->sender->isModerator && !$message->author->id != $this->sender->id) {
+
+                    if (!($this->sender->isModerator || $message->author->id == $this->sender->id)) {
                         $response['message'] = 'Unauthorized';
                         throw new RuntimeException;
                     }
