@@ -10,7 +10,7 @@ angular.module('angular-talk', [])
     .directive('angularTalk', ['$http', '$timeout', 'windowStatus', function ($http, $timeout, windowStatus) {
         return {
             restrict: 'AC',
-            scope: {},
+            scope: true,
             templateUrl: 'angularTalk/room.html',
             link: function ($scope, $element, $attributes) {
                 //Load settings
@@ -19,7 +19,6 @@ angular.module('angular-talk', [])
                     if (val == '') {
                         $scope.settings[name] = true;
                     } else if (['strings', 'sender', 'soundOnNew'].indexOf(name) >= 0) {
-
                         $scope.settings[name] = $scope.$eval(val);
                     } else {
                         $scope.settings[name] = val;

@@ -2,7 +2,7 @@
 <div ng-repeat-start="message in (listingMessages = (filteredMessages || (settings.allowReplies ? getReplies(0) : messages)) | orderBy:'+date')"
      class="moment"
      ng-show="settings.groupMessages && ($index==0 || (message.date - previousMessage(message).date)>30000)">
-    <time class="relative" datetime="{{::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}">{{::message.date*1000 | date:'medium'}}</time>
+    <time class="relative" datetime="{{ ::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z' }}">{{::message.date*1000 | date:'medium'}}</time>
 </div>
 
 <!-- Message content -->
@@ -20,7 +20,7 @@
     <!-- Message body -->
     <div class="message-wrapper">
         <div class="message-body" title="{{::message.date*1000 | date:'medium'}}">
-            {{message.content}}
+            {{ message.content }}
             <div class="message-info" ng-show="!settings.groupMessages || message.isActive || message.isSending || message.isError">
                 <!-- Error -->
               <span ng-show="message.isError">
@@ -38,15 +38,15 @@
                </span>
 
                 <!-- Author -->
-                <span ng-show="settings.showUserName">
-                    <a class="author" ng-href="{{::message.author.href}}">
+                <span ng-show="::settings.showUserName">
+                    <a class="author" ng-href="{{ ::message.author.href }}">
                         {{::message.author.name}}
                     </a>
                     <span class="bullet">•</span>
                 </span>
 
                 <!-- Reply -->
-                <span ng-show="replyLevel < settings.replyLevels-1 && settings.allowReplies && message.id">
+                <span ng-show="::replyLevel < settings.replyLevels-1 && settings.allowReplies && message.id">
                     <a class="reply" ng-click="reply(message)">
                         <i class="icon icon-reply fa fa-reply"></i>
                         {{::settings.strings.reply}}
@@ -55,7 +55,7 @@
                 </span>
 
                 <!-- Edit -->
-                 <span ng-show="settings.sender.isModerator">
+                <span ng-show="::settings.sender.isModerator || message.author.id == settings.sender.id">
                         <a class="edit" ng-click="edit(message)">
                             <i class="icon icon-edit fa fa-edit"></i>
                             {{::settings.strings.edit}}
@@ -66,7 +66,7 @@
                             {{::settings.strings.delete}}
                         </a>
                         <span class="bullet">•</span>
-                 </span>
+                </span>
 
                 <!-- Date -->
                 <time class="relative" datetime="{{::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}">{{::message.date*1000 | date:'medium'}}</time>
@@ -75,9 +75,8 @@
         </div>
 
         <!-- Replies -->
-        <ng-include
-                ng-if="settings.allowReplies && replyLevel < settings.replyLevels-1 && (filteredMessages = getReplies(message.id)).length>0"
-                src="'angularTalk/messages.html'"
-                ng-init="replyLevel=replyLevel+1"></ng-include>
+        <ng-include ng-if="settings.allowReplies && replyLevel < settings.replyLevels-1 && (filteredMessages = getReplies(message.id)).length>0"
+                    src="'angularTalk/messages.html'"
+                    ng-init="replyLevel=replyLevel+1"></ng-include>
     </div>
 </div>

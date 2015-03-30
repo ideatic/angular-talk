@@ -139,17 +139,17 @@ class AngularTalk_Room
      * Strings used in the app
      * @var array
      */
-    public $strings = array(
+    public $strings = [
         'messagePlaceholder' => 'Enter your message...',
-        'submit' => 'Submit',
-        'reply' => 'Reply',
-        'inReplyTo' => 'In reply to: ',
-        'retrySend' => "This message didn't send. Check your internet connection and click to try again.",
-        'edit' => 'Edit',
-        'delete' => 'Delete',
-        'save' => 'Save',
-        'delete_confirm' => 'Are you sure? This cannot be undone'
-    );
+        'submit'             => 'Submit',
+        'reply'              => 'Reply',
+        'inReplyTo'          => 'In reply to: ',
+        'retrySend'          => "This message didn't send. Check your internet connection and click to try again.",
+        'edit'               => 'Edit',
+        'delete'             => 'Delete',
+        'save'               => 'Save',
+        'delete_confirm'     => 'Are you sure? This cannot be undone'
+    ];
 
     public function __construct($channel, AngularTalk_MessageProvider $provider)
     {
@@ -196,18 +196,19 @@ class AngularTalk_Room
     }
 
     /**
-     * Establece el objeto en modo de escucha para responder peticiones AJAX
+     * Enable AJAX request listening
      */
-    public function listen()
+    public function listen($echo = true)
     {
-        $response = array(
+        $response = [
             'status' => 'success'
-        );
+        ];
 
         $request = json_decode(file_get_contents('php://input'));
 
         try {
-            switch (strtolower($_REQUEST['method'])) {
+            $method = strtolower($_REQUEST['method']);
+            switch ($method) {
                 case 'messages':
                     $since = isset($_REQUEST['since']) ? $_REQUEST['since'] : 0;
                     $dir = isset($_REQUEST['dir']) && $_REQUEST['dir'] == 'ASC' ? 'ASC' : 'DESC';
@@ -247,11 +248,7 @@ class AngularTalk_Room
                     break;
 
                 case 'update':
-                    if (!$this->sender->isModerator) {
-                        $response['message'] = 'Unauthorized';
-                        throw new RuntimeException;
-                    }
-
+                case 'delete':
                     //Load current message
                     $message = $this->_provider->get($this, $request->id, 'ID');
 
@@ -259,24 +256,24 @@ class AngularTalk_Room
                         $response['message'] = 'Invalid message ID';
                         throw new RuntimeException;
                     }
+                    if (!$this->sender->isModerator && !$message->author->id != $this->sender->id) {
+                        $response['message'] = 'Unauthorized';
+                        throw new RuntimeException;
+                    }
 
-                    //Set message new values
-                    $message->content = $request->content;
+                    if ($method == 'update') {
+                        //Set message new values
+                        $message->content = $request->content;
 
-                    $response['data'] = $this->_provider->update($this, $message);
-
-                    break;
-
-                case 'delete':
-                    if ($this->sender->isModerator) {
+                        $response['data'] = $this->_provider->update($this, $message);
+                    } else {
+                        //Delete message
                         if (!$this->_provider->delete($this, $request->id)) {
                             $response['message'] = 'Delete error';
                             throw new InvalidArgumentException;
                         }
-                    } else {
-                        $response['message'] = 'Unauthorized';
-                        throw new RuntimeException;
                     }
+
                     break;
 
                 default:
@@ -292,13 +289,17 @@ class AngularTalk_Room
             }
         }
 
-        //Output response
-        if ($response['status'] != 'success') {
-            header("HTTP/1.1 500");
+        if ($echo) {
+            //Output response
+            if ($response['status'] != 'success') {
+                header("HTTP/1.1 500");
+            }
+
+            header('Content-type: application/json');
+            echo json_encode($response, JSON_NUMERIC_CHECK);
         }
 
-        header('Content-type: application/json');
-        echo json_encode($response, JSON_NUMERIC_CHECK);
+        return $response;
     }
 
     /**
@@ -314,12 +315,12 @@ class AngularTalk_Room
     }
 
     /**
-     * Renderiza la sala de chat con los parámetros de la instancia actual
+     * Renders the current room
      * @return html
      */
     public function render()
     {
-        $attrs = array();
+        $attrs = [];
         foreach ($this->get_config() as $name => $value) {
             if (is_bool($value)) {
                 if ($value === true) {
