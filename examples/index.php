@@ -10,11 +10,13 @@ $chat->sender = $provider->authorInfo(1, $chat);
 $chat->sender->isModerator = true;
 $chat->soundOnNew = array(
     'audio/mpeg' => 'static/notification.mp3',
-    'audio/ogg' => 'static/notification.ogg'
+    'audio/ogg'  => 'static/notification.ogg'
 );
 $chat->debug = true;
 
-$comments = new AngularTalk_Room('comments', $provider);
+$commentProvider = new DummyProvider();
+$commentProvider->replies = true;
+$comments = new AngularTalk_Room('comments', $commentProvider);
 $comments->set_mode(AngularTalk_Room::MODE_CONVERSATION);
 $comments->ajaxEndpoint = '?commentsEndpoint';
 $comments->sender = $provider->authorInfo(1, $comments);
@@ -32,13 +34,13 @@ if (isset($_GET['commentsEndpoint'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en" ng-app="angular-talk">
+<html lang="en" ng-app="angularTalk">
 <head>
     <meta charset="utf-8">
     <title>angular-talk</title>
 
     <link href="static/example.css" rel="stylesheet"/>
-    <link href="../assets/css/angular-talk.min.css" rel="stylesheet"/>
+    <link href="../dist/css/angular-talk.min.css" rel="stylesheet"/>
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet"/>
 
 </head>
@@ -70,6 +72,6 @@ if (isset($_GET['commentsEndpoint'])) {
 </div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.3/angular.min.js"></script>
-<script src="../assets/js/angular-talk.tpls.js"></script>
+<script src="../dist/js/angular-talk.tpls.js"></script>
 </body>
 </html>

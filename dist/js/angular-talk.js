@@ -6,7 +6,7 @@
  */
 'use strict';
 
-angular.module('angular-talk', [])
+angular.module('angularTalk', [])
     .directive('angularTalk', ['$http', '$timeout', 'windowStatus', function ($http, $timeout, windowStatus) {
         return {
             restrict: 'AC',
@@ -32,66 +32,56 @@ angular.module('angular-talk', [])
                 //Received messages
                 $scope.messages = [];
 
-                //Get message ID
-                $scope.getMessageID = function getMessageID(message) {
-                    return settings.channel + '_' + message.id;
-                };
-
                 //Current message
-                $scope.submit = function submit() {
-                    if ($scope.content.length == '') {
-                        return;
-                    }
+                $scope.message = {};
 
-                    //Compose and send message
-                    var message;
-                    if ($scope.editingMessage) {
-                        message = $scope.editingMessage;
-                        message.content = $scope.content;
-                        $scope.editingMessage = null;
-                    } else {
-                        message = {
-                            author: settings.sender,
-                            content: $scope.content,
-                            date: new Date / 1E3 | 0
-                        };
-                        if ($scope.replyingTo) {
-                            message.replyToID = $scope.replyingTo.id;
-                        }
-                        $scope.messages.push(message);
-                    }
-
-                    $scope.sendMessage(message);
-
-                    //Clear content
-                    $scope.content = '';
-                    $scope.replyingTo = null;
-                };
-
-                //Send message
-                $scope.sendMessage = function sendMessage(message) {
+                //Save message
+                $scope.save = function save(message) {
                     message.isSending = true;
                     message.isError = false;
+                    message.isEditing = false;
 
-                    $http.post(settings.ajaxEndpoint, message, {
+                    //Build params
+                    var postParams = {};
+                    angular.forEach(message, function (v, k) {
+                        if (k[0] != '$' && k.indexOf('is') !== 0) {
+                            postParams[k] = v;
+                        }
+                    });
+
+                    $http.post(settings.ajaxEndpoint, postParams, {
                         params: {
                             method: message.id ? 'update' : 'submit'
                         }
-                    }).
-                        success(function (data) {
-                            message.isSending = false;
-                            if (data.data) {
-                                message.isError = false;
-                                angular.extend(message, data.data);
+                    }).success(function (data) {
+                        message.isSending = false;
+                        if (data.data) {
+                            message.isError = false;
+                            angular.extend(message, data.data);
 
-                                $scope.$emit('messageSend', message)
-                            }
-                        }).
-                        error(function () {
-                            message.isSending = false;
-                            message.isError = true;
-                        });
+                            $scope.$emit('messageSend', message)
+                        }
+                    }).error(function () {
+                        message.isSending = false;
+                        message.isError = true;
+                    });
+
+                    //Clear content
+                    $scope.content = '';
                 };
+
+                $scope.submit = function submit(message) {
+                    message = angular.extend(message, {
+                        author: settings.sender,
+                        date: new Date / 1E3 | 0
+                    });
+
+                    $scope.messages.push(message);
+                    $scope.save(message);
+
+                    $scope.message = {};
+                };
+
 
                 //Send on Enter
                 $scope.messageKeyPress = function messageKeyPress($event) {
@@ -103,25 +93,19 @@ angular.module('angular-talk', [])
                 };
 
                 //Reply messages
-                $scope.replyingTo = null;
                 $scope.reply = function reply(message) {
-                    $scope.replyingTo = message;
-                };
-                $scope.getReplies = function (toID) {
-                    var messages = [];
-                    angular.forEach($scope.messages, function (m) {
-                        if (m.replyToID == toID) {
-                            messages.push(m);
-                        }
+                    message.$replies.push({
+                        author: settings.sender,
+                        isEditing: true,
+                        content: '',
+                        date: new Date / 1E3 | 0,
+                        replyToID: message.id
                     });
-                    return messages;
                 };
 
                 //Edit message
-                $scope.editingMessage = null;
                 $scope.edit = function edit(message) {
-                    $scope.editingMessage = message;
-                    $scope.content = message.content;
+                    message.isEditing = true;
                 };
 
                 //Delete message
@@ -131,20 +115,29 @@ angular.module('angular-talk', [])
                             params: {
                                 method: 'delete'
                             }
-                        }).
-                            success(function () {
-                                var i = $scope.messages.indexOf(message);
+                        }).success(function () {
+                            function deleteInCollection(item, collection) {
+                                var i = collection.indexOf(item);
                                 if (i >= 0) {
-                                    $scope.messages.splice(i, 1);
+                                    collection.splice(i, 1);
                                 }
-                            });
+                                angular.forEach(collection, function (m) {
+                                    if (m.$replies) {
+                                        deleteInCollection(item, m.$replies);
+                                    }
+                                });
+                            }
+
+                            deleteInCollection(message, $scope.messages);
+
+                        });
                     }
                 };
 
                 //Previous message
-                $scope.previousMessage = function (reference) {
+                $scope.previousMessage = function previousMessage(reference) {
                     var previous = undefined;
-                    angular.forEach($scope.messages, function (m) {
+                    angular.forEach($scope.messages, function previousMessageIterator(m) {
                         if (m.replyToID == reference.replyToID && m.id != reference.id && m.date <= reference.date) {
                             if (!previous || previous.date < m.date) {
                                 previous = m;
@@ -175,7 +168,50 @@ angular.module('angular-talk', [])
                 }
 
                 //Receive messages
-                var loadMessages = function loadMessages(params, onFinish, first) {
+                function findMessageByID(id, messages) {
+                    var found = false;
+                    angular.forEach(messages || $scope.messages, function messageFinder(m) {
+                        if (m.id && m.id == id) {
+                            found = m;
+                        }
+                        if (!found && m.$replies) {
+                            found = findMessageByID(id, m.$replies);
+                        }
+                    });
+                    return found;
+                };
+
+                function appendMessage(message) {
+                    if (message.id) {
+                        //Check if message is duplicated
+                        if (findMessageByID(message.id)) {
+                            return;
+                        }
+
+                        //Save last and first ID
+                        if (message.id > lastID) {
+                            lastID = message.id;
+                        }
+                        if (message.id < firstID || angular.isUndefined(firstID)) {
+                            firstID = message.id;
+                        }
+                    }
+
+                    //Add to message tree
+                    message.$replies = [];
+                    if (message.replyToID) {
+                        var parent = findMessageByID(message.replyToID);
+                        if (parent) {
+                            parent.$replies.push(message);
+                        }
+                    } else {
+                        $scope.messages.push(message);
+                    }
+
+                    $scope.$emit('messageReceived', message);
+                }
+
+                function loadMessages(params, onFinish, first) {
                     $scope.loading = true;
                     $http.get(settings.ajaxEndpoint, {
                         params: angular.extend({
@@ -184,40 +220,13 @@ angular.module('angular-talk', [])
                             dir: 'ASC',
                             count: 25
                         }, params)
-                    }).success(function (data) {
+                    }).success(function onMessagesReceived(data) {
                         if (data.data) {
                             //Read messages and lastID
-                            var created = 0;
-                            angular.forEach(data.data, function (message) {
-                                //Check if message is duplicated
-                                var duplicated = false;
-                                angular.forEach($scope.messages, function (item) {
-                                    if (item.id && item.id == message.id) {
-                                        duplicated = true;
-                                    }
-                                });
-                                if (duplicated) {
-                                    return;
-                                }
-
-                                //Save last and first ID
-                                if (message.id > lastID) {
-                                    lastID = message.id;
-                                }
-                                if (message.id < firstID || angular.isUndefined(firstID)) {
-                                    firstID = message.id;
-                                }
-
-                                //Store message
-                                $scope.messages.push(message);
-                                created++;
-                                if (!first) {
-                                    $scope.$emit('messageReceived', message);
-                                }
-                            });
+                            angular.forEach(data.data, appendMessage);
 
                             //Play sound
-                            if (created > 0 && audio && windowStatus.hidden) {
+                            if (data.data.length > 0 && audio && windowStatus.hidden) {
                                 audio.play();
                             }
 
@@ -234,7 +243,7 @@ angular.module('angular-talk', [])
                             onFinish(false);
                         }
                     });
-                };
+                }
 
                 //Load previous messages when scrolling to top
                 $scope.loadingOlder = false;
@@ -293,14 +302,6 @@ angular.module('angular-talk', [])
                     return el.scrollTop + el.clientHeight + 1 >= el.scrollHeight;
                 }
 
-                //Show message
-                $scope.show = function showMessage(message) {
-                    var m = document.getElementById($scope.getMessageID(message));
-                    if (m) {
-                        el.scrollTop = m.offsetTop;
-                    }
-                };
-
                 $scope.$watch(function () {
                     if (active) {
                         scrollToBottom();
@@ -312,6 +313,18 @@ angular.module('angular-talk', [])
 
                     $scope.onScroll({offset: el.scrollTop});
                 });
+            }
+        };
+    })
+    .directive('init', function () {
+        return {
+            priority: 0,
+            compile: function () {
+                return {
+                    pre: function initDirective(scope, element, attrs) {
+                        scope.$eval(attrs.init);
+                    }
+                };
             }
         };
     })

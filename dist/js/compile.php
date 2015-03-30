@@ -42,7 +42,7 @@ while (true) {
         }
 
         $js .=
-            PHP_EOL . PHP_EOL . 'angular.module("angular-talk").run(["$templateCache", function($templateCache) { ' . PHP_EOL . implode(PHP_EOL, $template_cache) . PHP_EOL .
+            PHP_EOL . PHP_EOL . 'angular.module("angularTalk").run(["$templateCache", function($templateCache) { ' . PHP_EOL . implode(PHP_EOL, $template_cache) . PHP_EOL .
             '}]);';
     }
 

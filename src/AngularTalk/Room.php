@@ -143,7 +143,6 @@ class AngularTalk_Room
         'messagePlaceholder' => 'Enter your message...',
         'submit'             => 'Submit',
         'reply'              => 'Reply',
-        'inReplyTo'          => 'In reply to: ',
         'retrySend'          => "This message didn't send. Check your internet connection and click to try again.",
         'edit'               => 'Edit',
         'delete'             => 'Delete',

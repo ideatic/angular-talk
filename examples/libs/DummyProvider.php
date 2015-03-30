@@ -2,6 +2,7 @@
 
 class DummyProvider extends AngularTalk_MessageProvider
 {
+    public $replies = false;
 
     /**
      * Create a new message into the given room
@@ -41,7 +42,7 @@ class DummyProvider extends AngularTalk_MessageProvider
             $message->channel = $room->channel;
             $message->id = $sinceID + $i + 1;
             $message->author = $this->authorInfo(mt_rand(1, 4), $room);
-            $message->replyToID = 0;
+            $message->replyToID = $this->replies && $sinceID > 1 && mt_rand(0, 100) < 50 ? mt_rand(1, $sinceID) : 0;
 
             $message->content = $content[array_rand($content)];
             $message->date = time();
