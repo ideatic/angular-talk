@@ -3,7 +3,7 @@
 /**
  * Represents a message provider
  */
-abstract class AngularTalk_MessageProvider
+interface AngularTalk_MessageProvider
 {
     /**
      * Create a new message into the given room
@@ -13,7 +13,7 @@ abstract class AngularTalk_MessageProvider
      *
      * @return AngularTalk_Message Created message
      */
-    public abstract function create(AngularTalk_Room $room, AngularTalk_Message $message);
+    public function create(AngularTalk_Room $room, AngularTalk_Message $message);
 
     /**
      * Get the latest messages from the given room
@@ -25,7 +25,7 @@ abstract class AngularTalk_MessageProvider
      *
      * @return AngularTalk_Message[]|AngularTalk_Message
      */
-    public abstract function get(AngularTalk_Room $room, $sinceID, $dir = 'ASC', $count = 0);
+    public function get(AngularTalk_Room $room, $sinceID, $dir = 'ASC', $count = 0);
 
     /**
      * Update the given message
@@ -35,7 +35,7 @@ abstract class AngularTalk_MessageProvider
      *
      * @return AngularTalk_Message Edited message
      */
-    public abstract function update(AngularTalk_Room $room, AngularTalk_Message $message);
+    public function update(AngularTalk_Room $room, AngularTalk_Message $message);
 
     /**
      * Delete the given message
@@ -45,7 +45,7 @@ abstract class AngularTalk_MessageProvider
      *
      * @return bool
      */
-    public abstract function delete(AngularTalk_Room $room, $messageID);
+    public function delete(AngularTalk_Room $room, $messageID);
 
     /**
      * Gets author info given its ID
@@ -55,5 +55,5 @@ abstract class AngularTalk_MessageProvider
      *
      * @return AngularTalk_Author
      */
-    public abstract function authorInfo($id, AngularTalk_Room $room);
+    public function authorInfo($id, AngularTalk_Room $room);
 }

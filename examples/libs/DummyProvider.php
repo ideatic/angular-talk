@@ -1,6 +1,6 @@
 <?php
 
-class DummyProvider extends AngularTalk_MessageProvider
+class DummyProvider implements AngularTalk_MessageProvider
 {
     public $replies = false;
 

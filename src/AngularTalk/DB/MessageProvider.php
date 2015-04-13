@@ -3,7 +3,7 @@
 /**
  * Represents a message provider that uses a database as data layer
  */
-abstract class AngularTalk_DB_MessageProvider extends AngularTalk_MessageProvider
+abstract class AngularTalk_DB_MessageProvider implements  AngularTalk_MessageProvider
 {
     protected $_table;
     /**

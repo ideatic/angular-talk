@@ -136,7 +136,6 @@ angular.module('angularTalk', [])
                         }
 
                         deleteInCollection(message, $scope.messages);
-
                     }
 
                     if (!message.id) {
