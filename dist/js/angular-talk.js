@@ -111,10 +111,12 @@ angular.module('angularTalk', [])
                 //Edit message
                 $scope.edit = function edit(message) {
                     message.isEditing = true;
+                    message.originalContent = message.content;
                 };
 
                 $scope.cancelEdit = function cancelEdit(message) {
                     message.isEditing = false;
+                    message.content = message.originalContent;
                     if (!message.id) {
                         $scope.delete(message);
                     }
@@ -289,14 +291,14 @@ angular.module('angularTalk', [])
                 };
 
                 //Auto update messages
-                var reload = function reload() {
+                function reload() {
                     if ($scope.settings.updateInterval) {
                         $timeout(function () {
                             loadMessages({}, reload)
                         }, $scope.settings.updateInterval);
                     }
 
-                };
+                }
                 loadMessages({}, reload, true);
 
                 //Remove autoupdate interval

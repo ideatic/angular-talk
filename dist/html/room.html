@@ -5,7 +5,7 @@
     </div>
 
     <!-- Messages -->
-    <div class="empty-room" ng-show="!messages || messages.length==0">{{ ::settings.strings.emptyRoom }}</div>
+    <div class="empty-room" ng-show="messages.length==0">{{ ::settings.strings.emptyRoom }}</div>
     <ng-include src="'angularTalk/messages.html'" init="messages = messages; replyLevel = 0"></ng-include>
 </div>
 
