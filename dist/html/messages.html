@@ -76,7 +76,7 @@
             </div>
 
             <!-- Message edit -->
-            <div ng-show="message.isEditing">
+            <div ng-if="message.isEditing">
              <textarea ng-model="message.content"
                        ng-keyup="messageKeyPress($event)"
                        ng-focus="current.message = message"
@@ -86,7 +86,7 @@
                     <a ng-click="cancelEdit(message)">{{ ::settings.strings.cancel }}</a>
 
                     <button type="button" class="submit" ng-click="save(message)" ng-disabled="!message.content">
-                        {{message.id ? settings.strings.save : settings.strings.submit}}
+                        {{ message.id ? settings.strings.save : settings.strings.submit }}
                     </button>
                 </div>
             </div>

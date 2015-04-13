@@ -144,6 +144,7 @@ class AngularTalk_Room
         'submit'             => 'Submit',
         'reply'              => 'Reply',
         'retrySend'          => "This message didn't send. Check your internet connection and click to try again.",
+        'emptyRoom'          => '',
         'edit'               => 'Edit',
         'delete'             => 'Delete',
         'save'               => 'Save',
