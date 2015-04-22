@@ -10,7 +10,7 @@
 </div>
 
 <!-- Send panel -->
-<div class="footer">
+<div class="footer" ng-if="!settings.readOnly">
     <textarea ng-model="message.content"
               ng-keyup="messageKeyPress($event)"
               rows="3" cols="1"

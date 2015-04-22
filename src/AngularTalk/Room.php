@@ -33,6 +33,12 @@ class AngularTalk_Room
     public $sender;
 
     /**
+     * Room is in read only mode
+     * @var bool
+     */
+    public $readOnly = false;
+
+    /**
      * Show user names above their message
      * @var bool
      */
@@ -320,25 +326,27 @@ class AngularTalk_Room
      * Renders the current room
      * @return html
      */
-    public function render()
+    public function render($attr = array())
     {
-        $attrs = [];
+        //Prepare attributes
+        $attr['class'] = 'angular-talk';
+
         foreach ($this->get_config() as $name => $value) {
             if (is_bool($value)) {
                 if ($value === true) {
-                    $attrs[] = $this->_decamelize($name, '-');
+                    $attr[$this->_decamelize($name, '-')] = 'true';
                 }
             } else {
-                $attrs[] = $this->_decamelize($name, '-') . '="' . htmlspecialchars(is_scalar($value) ? $value : json_encode($value)) . '"';
+                $attr[$this->_decamelize($name, '-')] = is_scalar($value) ? $value : json_encode($value);
             }
         }
 
-        ob_start();
-        ?>
-        <div class="angular-talk" <?= implode(' ', $attrs) ?>>
-        </div>
-        <?php
-        return ob_get_clean();
+        //Render HTML element
+        $html_attrs = array();
+        foreach ($attr as $name => $value) {
+            $html_attrs[] = $name . '="' . htmlentities($value) . '"';
+        }
+        return '<div ' . implode(' ', $html_attrs) . '"></div>';
     }
 
     private function _decamelize($str, $separator = ' ')

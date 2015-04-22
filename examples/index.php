@@ -69,6 +69,14 @@ if (isset($_GET['commentsEndpoint'])) {
         <?php
         echo $comments->render();
         ?></div>
+
+    <h2>Comments engine (Read Only)</h2>
+
+    <div id="comments">
+        <?php
+        $comments->readOnly=true;
+        echo $comments->render();
+        ?></div>
 </div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.3/angular.min.js"></script>
