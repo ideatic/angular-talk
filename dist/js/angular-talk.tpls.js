@@ -35,6 +35,45 @@ angular.module('angularTalk', [])
                 //Current message
                 $scope.message = {};
 
+                //Load message
+                var waitingParent = [];
+
+                function appendMessage(message) {
+                    if (message.id) {
+                        //Check if message is duplicated
+                        if (findMessageByID(message.id)) {
+                            return;
+                        }
+
+                        //Save last and first ID
+                        if (message.id > lastID) {
+                            lastID = message.id;
+                        }
+                        if (message.id < firstID || angular.isUndefined(firstID)) {
+                            firstID = message.id;
+                        }
+                    }
+
+                    //Add to message tree
+                    message.$replies = [];
+                    if (message.replyToID) {
+                        waitingParent.push(message);
+                    } else {
+                        $scope.messages.push(message);
+                    }
+
+                    //Find pending parents
+                    angular.forEach(waitingParent, function (m, i) {
+                        var parent = findMessageByID(m.replyToID);
+                        if (parent) {
+                            parent.$replies.push(m);
+                            waitingParent.splice(i, 1);
+                        }
+                    });
+
+                    $scope.$emit('messageReceived', message);
+                }
+
                 //Save message
                 $scope.save = function save(message) {
                     message.isSending = true;
@@ -76,7 +115,7 @@ angular.module('angularTalk', [])
                         date: new Date / 1E3 | 0
                     });
 
-                    $scope.messages.push(message);
+                    appendMessage(message);
                     $scope.save(message);
 
                     $scope.message = {};
@@ -196,44 +235,6 @@ angular.module('angularTalk', [])
                         }
                     });
                     return found;
-                };
-
-                var waitingParent = [];
-
-                function appendMessage(message) {
-                    if (message.id) {
-                        //Check if message is duplicated
-                        if (findMessageByID(message.id)) {
-                            return;
-                        }
-
-                        //Save last and first ID
-                        if (message.id > lastID) {
-                            lastID = message.id;
-                        }
-                        if (message.id < firstID || angular.isUndefined(firstID)) {
-                            firstID = message.id;
-                        }
-                    }
-
-                    //Add to message tree
-                    message.$replies = [];
-                    if (message.replyToID) {
-                        waitingParent.push(message);
-                    } else {
-                        $scope.messages.push(message);
-                    }
-
-                    //Find pending parents
-                    angular.forEach(waitingParent, function (m, i) {
-                        var parent = findMessageByID(m.replyToID);
-                        if (parent) {
-                            parent.$replies.push(m);
-                            waitingParent.splice(i, 1);
-                        }
-                    });
-
-                    $scope.$emit('messageReceived', message);
                 }
 
                 function loadMessages(params, onFinish, first) {
@@ -299,6 +300,7 @@ angular.module('angularTalk', [])
                     }
 
                 }
+
                 loadMessages({}, reload, true);
 
                 //Remove autoupdate interval
