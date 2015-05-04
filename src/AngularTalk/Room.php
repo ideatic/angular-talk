@@ -236,7 +236,7 @@ class AngularTalk_Room
                     $message->approved = false;
                     $message->title = isset($request->title) ? $request->title : '';
                     $message->rating = isset($request->rating) && $this->allowRating ? $request->rating : 0;
-                    $message->replyToID = isset($request->replyToID) && $this->allowReplies ? $request->replyToID : 0;
+                    $message->replyToID = isset($request->replyToID) && $this->allowReplies ? $request->replyToID : null;
 
                     //Author info
                     $message->author = clone $this->sender;
