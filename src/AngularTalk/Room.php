@@ -311,6 +311,13 @@ class AngularTalk_Room
     }
 
     /**
+     * Deletes the current room and all its associated messages
+     */
+    public function delete(){
+        return $this->_provider->delete($this);
+    }
+
+    /**
      * Get the current room config for the angularTalk directive
      * @return array
      */
@@ -324,7 +331,7 @@ class AngularTalk_Room
 
     /**
      * Renders the current room
-     * @return html
+     * @return string
      */
     public function render($attr = array())
     {

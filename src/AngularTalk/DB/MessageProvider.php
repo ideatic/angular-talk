@@ -3,7 +3,7 @@
 /**
  * Represents a message provider that uses a database as data layer
  */
-abstract class AngularTalk_DB_MessageProvider implements  AngularTalk_MessageProvider
+abstract class AngularTalk_DB_MessageProvider implements AngularTalk_MessageProvider
 {
     protected $_table;
     /**
@@ -121,16 +121,16 @@ abstract class AngularTalk_DB_MessageProvider implements  AngularTalk_MessagePro
     /**
      * @inheritdoc
      */
-    public function delete(AngularTalk_Room $room, $messageID)
+    public function delete(AngularTalk_Room $room, $messageID = null)
     {
-        if (!$messageID) {
-            throw new InvalidArgumentException('The given message is not saved.');
-        }
-
         $channel = $this->_link->escape($room->channel);
-        $id = $this->_link->escape($messageID);
+        if (isset($messageID)) {
+            $id = $this->_link->escape($messageID);
 
-        $this->_link->query("DELETE FROM {$this->_table} WHERE channel = $channel && id = $id");
+            $this->_link->query("DELETE FROM {$this->_table} WHERE channel = $channel && id = $id");
+        } else {
+            $this->_link->query("DELETE FROM {$this->_table} WHERE channel = $channel");
+        }
 
         return true;
     }

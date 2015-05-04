@@ -41,11 +41,11 @@ interface AngularTalk_MessageProvider
      * Delete the given message
      *
      * @param AngularTalk_Room $room      Room where thew new message should be created.
-     * @param mixed            $messageID Message ID
+     * @param mixed            $messageID Message ID. If not given, deletes all messages of this room
      *
      * @return bool
      */
-    public function delete(AngularTalk_Room $room, $messageID);
+    public function delete(AngularTalk_Room $room, $messageID = null);
 
     /**
      * Gets author info given its ID
