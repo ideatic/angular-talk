@@ -36,7 +36,7 @@ angular.module('angularTalk', [])
                 $scope.message = {};
 
                 //Load message
-                var waitingParent = [];
+                var waitingParent = {};
 
                 function appendMessage(message) {
                     if (message.id) {
@@ -57,17 +57,16 @@ angular.module('angularTalk', [])
                     //Add to message tree
                     message.$replies = [];
                     if (message.replyToID) {
-                        waitingParent.push(message);
+                        waitingParent[message.id] = message;
                     } else {
                         $scope.messages.push(message);
                     }
 
                     //Find pending parents
-                    angular.forEach(waitingParent, function (m, i) {
-                        var parent = findMessageByID(m.replyToID);
-                        if (parent) {
-                            parent.$replies.push(m);
-                            waitingParent.splice(i, 1);
+                    angular.forEach(waitingParent, function (waiting, id) {
+                        if (waiting.replyToID == message.id) {
+                            message.$replies.push(waiting);
+                            delete waitingParent[id];
                         }
                     });
 
