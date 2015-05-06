@@ -63,12 +63,17 @@ angular.module('angularTalk', [])
                     }
 
                     //Find pending parents
-                    angular.forEach(waitingParent, function (waiting, id) {
-                        if (waiting.replyToID == message.id) {
-                            message.$replies.push(waiting);
-                            delete waitingParent[id];
-                        }
-                    });
+                    do {
+                        var found = 0;
+                        angular.forEach(waitingParent, function (waiting, id) {
+                            var parent = findMessageByID(waiting.replyToID);
+                            if (parent) {
+                                parent.$replies.push(waiting);
+                                delete waitingParent[id];
+                                found++;
+                            }
+                        });
+                    } while (found > 0);
 
                     $scope.$emit('messageReceived', message);
                 }
