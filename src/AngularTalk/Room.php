@@ -211,19 +211,28 @@ class AngularTalk_Room
             'status' => 'success'
         ];
 
-        $request = json_decode(file_get_contents('php://input'));
 
         try {
-            $method = strtolower($_REQUEST['method']);
+            $request_body = file_get_contents('php://input');
+            if ($request_body) {
+                $request = json_decode($request_body);
+                if ($request === null || !is_object($request)) {
+                    throw new Exception('Invalid request data');
+                }
+            } else {
+                $request = null;
+            }
+
+            $method = strtoupper($_SERVER['REQUEST_METHOD']);
             switch ($method) {
-                case 'messages':
-                    $since = isset($_REQUEST['since']) ? $_REQUEST['since'] : 0;
+                case 'GET':
                     $dir = isset($_REQUEST['dir']) && $_REQUEST['dir'] == 'ASC' ? 'ASC' : 'DESC';
+                    $since = isset($_REQUEST['since']) ? $_REQUEST['since'] : null;
                     $count = isset($_REQUEST['count']) && is_numeric($_REQUEST['count']) ? $_REQUEST['count'] : 25;
                     $response['data'] = $this->_provider->get($this, $since, $dir, $count);
                     break;
 
-                case 'submit':
+                case 'POST':
                     if (!$this->allowNew) {
                         $response['message'] = 'New message submissions are not allowed';
                         throw new Exception;
@@ -254,10 +263,10 @@ class AngularTalk_Room
                     $response['data'] = $this->_provider->create($this, $message);
                     break;
 
-                case 'update':
-                case 'delete':
+                case 'PUT':
+                case 'DELETE':
                     //Load current message
-                    $message = $this->_provider->get($this, $request->id, 'ID');
+                    $message = $this->_provider->get($this, $request ? $request->id : $_REQUEST['id'], 'ID');
 
                     if (!$message) {
                         $response['message'] = 'Invalid message ID';
@@ -269,17 +278,15 @@ class AngularTalk_Room
                         throw new RuntimeException;
                     }
 
-                    if ($method == 'update') {
-                        //Set message new values
+                    if ($method == 'PUT') {
+                        //Update message
                         $message->content = $request->content;
 
                         $response['data'] = $this->_provider->update($this, $message);
-                    } else {
+                    } elseif (!$this->_provider->delete($this, $message->id)) {
                         //Delete message
-                        if (!$this->_provider->delete($this, $request->id)) {
-                            $response['message'] = 'Delete error';
-                            throw new InvalidArgumentException;
-                        }
+                        $response['message'] = 'Delete error';
+                        throw new InvalidArgumentException;
                     }
 
                     break;
@@ -313,7 +320,8 @@ class AngularTalk_Room
     /**
      * Deletes the current room and all its associated messages
      */
-    public function delete(){
+    public function delete()
+    {
         return $this->_provider->delete($this);
     }
 

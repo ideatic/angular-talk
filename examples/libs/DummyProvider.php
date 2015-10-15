@@ -93,7 +93,7 @@ class DummyProvider implements AngularTalk_MessageProvider
      *
      * @return bool
      */
-    public function delete(AngularTalk_Room $room, $messageID)
+    public function delete(AngularTalk_Room $room, $messageID = null)
     {
         return true;
     }

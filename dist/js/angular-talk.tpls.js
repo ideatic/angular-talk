@@ -84,27 +84,23 @@ angular.module('angularTalk', [])
                     message.isError = false;
                     message.isEditing = false;
 
-                    //Build params
-                    var postParams = {};
+                    //Build body
+                    var httpBody = {};
                     angular.forEach(message, function (v, k) {
                         if (k[0] != '$' && k.indexOf('is') !== 0) {
-                            postParams[k] = v;
+                            httpBody[k] = v;
                         }
                     });
 
-                    $http.post(settings.ajaxEndpoint, postParams, {
-                        params: {
-                            method: message.id ? 'update' : 'submit'
-                        }
-                    }).success(function (data) {
+                    $http[message.id ? 'put' : 'post'](settings.ajaxEndpoint, httpBody).then(function (httpResponse) {
                         message.isSending = false;
-                        if (data.data) {
+                        if (httpResponse.data) {
                             message.isError = false;
-                            angular.extend(message, data.data);
+                            angular.extend(message, httpResponse.data.data);
 
                             $scope.$emit('messageSend', message)
                         }
-                    }).error(function () {
+                    }, function () {
                         message.isSending = false;
                         message.isError = true;
                     });
@@ -166,6 +162,20 @@ angular.module('angularTalk', [])
                 };
 
                 //Delete message
+
+                function addParam(url, key, value) {
+                    if (url.indexOf('?') >= 0) {
+                        if (url.substring(0, url.length - 1) !== '&') {
+                            url += '&';
+                        }
+                    } else {
+                        url += '?';
+                    }
+
+                    url += encodeURIComponent(key) + '=' + encodeURIComponent(value);
+                    return url;
+                }
+
                 $scope.delete = function deleteFn(message) {
                     function removeFromListing() {
                         function deleteInCollection(item, collection) {
@@ -186,11 +196,7 @@ angular.module('angularTalk', [])
                     if (!message.id) {
                         removeFromListing();
                     } else if (confirm(settings.strings.delete_confirm)) {
-                        $http.post(settings.ajaxEndpoint, message, {
-                            params: {
-                                method: 'delete'
-                            }
-                        }).success(removeFromListing);
+                        $http.delete(addParam(settings.ajaxEndpoint, 'id', message.id)).then(removeFromListing);
                     }
                 };
 
@@ -245,28 +251,27 @@ angular.module('angularTalk', [])
                     $scope.loading = true;
                     $http.get(settings.ajaxEndpoint, {
                         params: angular.extend({
-                            method: 'messages',
                             since: lastID,
                             dir: 'ASC',
                             count: 25
                         }, params)
-                    }).success(function onMessagesReceived(data) {
-                        if (data.data) {
+                    }).then(function onMessagesReceived(httpResponse) {
+                        if (httpResponse.data) {
                             //Read messages and lastID
-                            angular.forEach(data.data, appendMessage);
+                            angular.forEach(httpResponse.data.data, appendMessage);
 
                             //Play sound
-                            if (data.data.length > 0 && audio && windowStatus.hidden) {
+                            if (httpResponse.data.data.length > 0 && audio && windowStatus.hidden) {
                                 audio.play();
                             }
 
                             if (onFinish) {
-                                onFinish(data);
+                                onFinish(httpResponse.data);
                             }
                         }
 
                         $scope.loading = false;
-                    }).error(function () {
+                    }, function () {
                         $scope.loading = false;
 
                         if (onFinish) {
@@ -285,8 +290,8 @@ angular.module('angularTalk', [])
                         loadMessages({
                             since: firstID,
                             dir: 'DESC'
-                        }, function (data) {
-                            if (data.data.length == 0)//No more messages!
+                        }, function (response) {
+                            if (response.data.length == 0)//No more messages!
                             {
                                 $scope.disableOlder = true;
                             }

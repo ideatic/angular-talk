@@ -72,7 +72,11 @@ abstract class AngularTalk_DB_MessageProvider implements AngularTalk_MessageProv
 
         }
 
-        $query = "SELECT * FROM {$this->_table} WHERE channel = $channel && id $op $since";
+        $query = "SELECT * FROM {$this->_table} WHERE channel = $channel";
+
+        if($sinceID){
+            $query.=" && id $op $since";
+        }
 
         if ($count > 0) {
             $qdir = $dir == 'ASC' ? 'DESC' : 'ASC';
@@ -90,6 +94,17 @@ abstract class AngularTalk_DB_MessageProvider implements AngularTalk_MessageProv
                 } else {
                     $message->$k = $v;
                 }
+            }
+
+            //Remove unused fields
+            if (!$room->allowRating) {
+                unset($message->rating);
+            }
+            if (!$room->allowReplies) {
+                unset($message->replyToID);
+            }
+            if (!$room->onlyApproved) {
+                unset($message->approved);
             }
 
             $messages[] = $message;

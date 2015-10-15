@@ -1,5 +1,7 @@
 <?php
 
+chdir(dirname(__FILE__));
+
 $source = 'angular-talk.js';
 
 $watch_paths = array($source => 0);
