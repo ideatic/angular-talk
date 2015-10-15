@@ -215,7 +215,7 @@ class AngularTalk_Room
             $request_body = file_get_contents('php://input');
             if ($request_body) {
                 $request = json_decode($request_body);
-                if ($request === null || !is_object($request)) {
+                if ($request === null) {
                     throw new AngularTalk_RoomException('Invalid request data', 400);
                 }
             } else {
@@ -234,6 +234,9 @@ class AngularTalk_Room
                 case 'POST':
                     if (!$this->allowNew) {
                         throw new AngularTalk_RoomException('New message submissions is not allowed', 403);
+                    }
+                    if (!$request) {
+                        throw new AngularTalk_RoomException('Invalid request data', 400);
                     }
 
                     $message = new AngularTalk_Message();
@@ -266,7 +269,7 @@ class AngularTalk_Room
                     //Load current message
                     $id = $message_id;
                     if (!$id) {
-                        $id = $request ? $request->id : $_REQUEST['id'];
+                        $id = $request && is_object($request) ? $request->id : $_REQUEST['id'];
                     }
 
                     $message = $this->_provider->get($this, $id, 'ID');
