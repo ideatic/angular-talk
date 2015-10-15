@@ -205,19 +205,18 @@ class AngularTalk_Room
     /**
      * Enable AJAX request listening
      */
-    public function listen($echo = true)
+    public function listen($message_id = null, $echo = true)
     {
-        $response = [
-            'status' => 'success'
-        ];
+        $response = array();
 
 
+        $http_code = 200;
         try {
             $request_body = file_get_contents('php://input');
             if ($request_body) {
                 $request = json_decode($request_body);
                 if ($request === null || !is_object($request)) {
-                    throw new Exception('Invalid request data');
+                    throw new AngularTalk_RoomException('Invalid request data', 400);
                 }
             } else {
                 $request = null;
@@ -234,8 +233,7 @@ class AngularTalk_Room
 
                 case 'POST':
                     if (!$this->allowNew) {
-                        $response['message'] = 'New message submissions are not allowed';
-                        throw new Exception;
+                        throw new AngularTalk_RoomException('New message submissions is not allowed', 403);
                     }
 
                     $message = new AngularTalk_Message();
@@ -259,23 +257,26 @@ class AngularTalk_Room
                         $message->author->url = $request->author->email;
                     }
 
-
                     $response['data'] = $this->_provider->create($this, $message);
+                    $http_code = 201;
                     break;
 
                 case 'PUT':
                 case 'DELETE':
                     //Load current message
-                    $message = $this->_provider->get($this, $request ? $request->id : $_REQUEST['id'], 'ID');
+                    $id = $message_id;
+                    if (!$id) {
+                        $id = $request ? $request->id : $_REQUEST['id'];
+                    }
+
+                    $message = $this->_provider->get($this, $id, 'ID');
 
                     if (!$message) {
-                        $response['message'] = 'Invalid message ID';
-                        throw new RuntimeException;
+                        throw new AngularTalk_RoomException('Message not found', 404);
                     }
 
                     if (!($this->sender->isModerator || $message->author->id == $this->sender->id)) {
-                        $response['message'] = 'Unauthorized';
-                        throw new RuntimeException;
+                        throw new AngularTalk_RoomException('Not authorized to this operation', 403);
                     }
 
                     if ($method == 'PUT') {
@@ -285,18 +286,15 @@ class AngularTalk_Room
                         $response['data'] = $this->_provider->update($this, $message);
                     } elseif (!$this->_provider->delete($this, $message->id)) {
                         //Delete message
-                        $response['message'] = 'Delete error';
-                        throw new InvalidArgumentException;
+                        throw new AngularTalk_RoomException('Delete error', 500);
                     }
 
                     break;
 
                 default:
-                    $response['message'] = 'Unrecognized method';
-                    throw new InvalidArgumentException;
+                    throw new AngularTalk_RoomException('Unrecognized method', 400);
             }
         } catch (Exception $err) {
-            $response['status'] = 'error';
             if ($this->debug) {
                 $response['message'] = $err->getMessage();
                 $response['file'] = $err->getFile();
@@ -304,12 +302,14 @@ class AngularTalk_Room
             }
         }
 
+        if (isset($err)) {
+            $http_code = $err instanceof AngularTalk_RoomException ? $err->getCode() : 500;
+        }
+        $response['status'] = $http_code;
+
         if ($echo) {
             //Output response
-            if ($response['status'] != 'success') {
-                header("HTTP/1.1 500");
-            }
-
+            header("HTTP/1.1 " . $http_code);
             header('Content-type: application/json');
             echo json_encode($response, JSON_NUMERIC_CHECK);
         }
@@ -368,4 +368,9 @@ class AngularTalk_Room
     {
         return strtolower(preg_replace('/([a-z])([A-Z])/', '$1' . $separator . '$2', $str));
     }
+}
+
+class AngularTalk_RoomException extends Exception
+{
+
 }
