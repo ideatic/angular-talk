@@ -1,0 +1,7 @@
+{
+  "less": {"relativeUrls":true},
+  "browsers": ["ie 9", "last 3 versions", "Android 2.3"],
+  "mqpacker": false,
+  "rebaseUrls":true,
+  "minifier":{"preserveHacks": true, "removeAllComments": true}
+}

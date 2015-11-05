@@ -22,7 +22,7 @@ abstract class AngularTalk_DB_MessageProvider implements AngularTalk_MessageProv
      *
      * @return array
      */
-    private function _prepare_message(AngularTalk_Message $message)
+    protected function _prepare_message(AngularTalk_Message $message)
     {
         $dbData = get_object_vars($message);
 
@@ -79,7 +79,7 @@ abstract class AngularTalk_DB_MessageProvider implements AngularTalk_MessageProv
         }
 
         if ($count > 0) {
-            $qdir = $dir == 'ASC' ? 'DESC' : 'ASC';
+            $qdir = $dir == 'ASC' ? 'ASC' : 'DESC';
             $query .= " ORDER BY date $qdir LIMIT $count";
         }
 

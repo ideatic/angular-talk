@@ -203,23 +203,31 @@ class AngularTalk_Room
     }
 
     /**
-     * Enable AJAX request listening
+     * Listen for AngularTalk request
+     *
+     * @param object    $request    HTTP request body, null to get it from 'php://input'
+     * @param int       $message_id ID of the current message, null to get it from request
+     * @param bool|true $echo       Send response automatically
+     *
+     * @return array
      */
-    public function listen($message_id = null, $echo = true)
+    public function listen($request = null, $message_id = null, $echo = true)
     {
-        $response = array();
+        $response = [];
 
 
         $http_code = 200;
         try {
-            $request_body = file_get_contents('php://input');
-            if ($request_body) {
-                $request = json_decode($request_body);
-                if ($request === null) {
-                    throw new AngularTalk_RoomException('Invalid request data', 400);
+            if (!$request) {
+                $request_body = file_get_contents('php://input');
+                if ($request_body) {
+                    $request = json_decode($request_body);
+                    if ($request === null) {
+                        throw new AngularTalk_RoomException('Invalid request data', 400);
+                    }
+                } else {
+                    $request = null;
                 }
-            } else {
-                $request = null;
             }
 
             $method = strtoupper($_SERVER['REQUEST_METHOD']);
@@ -272,7 +280,7 @@ class AngularTalk_Room
                         $id = $request && is_object($request) ? $request->id : $_REQUEST['id'];
                     }
 
-                    $message = $this->_provider->get($this, $id, 'ID');
+                    $message = $id ? $this->_provider->get($this, $id, 'ID') : false;
 
                     if (!$message) {
                         throw new AngularTalk_RoomException('Message not found', 404);
@@ -344,32 +352,19 @@ class AngularTalk_Room
      * Renders the current room
      * @return string
      */
-    public function render($attr = array())
+    public function render($attr = [])
     {
         //Prepare attributes
         $attr['class'] = 'angular-talk';
 
-        foreach ($this->get_config() as $name => $value) {
-            if (is_bool($value)) {
-                if ($value === true) {
-                    $attr[$this->_decamelize($name, '-')] = 'true';
-                }
-            } else {
-                $attr[$this->_decamelize($name, '-')] = is_scalar($value) ? $value : json_encode($value);
-            }
-        }
+        $attr['settings'] = json_encode($this->get_config());
 
         //Render HTML element
-        $html_attrs = array();
+        $html_attrs = [];
         foreach ($attr as $name => $value) {
             $html_attrs[] = $name . '="' . htmlentities($value) . '"';
         }
         return '<div ' . implode(' ', $html_attrs) . '"></div>';
-    }
-
-    private function _decamelize($str, $separator = ' ')
-    {
-        return strtolower(preg_replace('/([a-z])([A-Z])/', '$1' . $separator . '$2', $str));
     }
 }
 

@@ -10,20 +10,12 @@ angular.module('angularTalk', [])
     .directive('angularTalk', ['$http', '$timeout', 'windowStatus', function ($http, $timeout, windowStatus) {
         return {
             restrict: 'AC',
-            scope: true,
+            scope: {
+                settings: '='
+            },
             templateUrl: 'angularTalk/room.html',
             link: function ($scope, $element, $attributes) {
-                //Load settings
-                var settings = $scope.settings = {};
-                angular.forEach($attributes, function (val, name) {
-                    if (val == '') {
-                        $scope.settings[name] = true;
-                    } else if (['strings', 'sender', 'soundOnNew'].indexOf(name) >= 0) {
-                        $scope.settings[name] = $scope.$eval(val);
-                    } else {
-                        $scope.settings[name] = val;
-                    }
-                });
+                var settings = $scope.settings;
 
                 if (!settings.ajaxEndpoint) {
                     throw new Error('Invalid ajax endpoint');
@@ -110,9 +102,11 @@ angular.module('angularTalk', [])
                 };
 
                 $scope.submit = function submit() {
+                    if (!$scope.message.content)return;
+
                     var message = angular.extend($scope.message, {
                         author: settings.sender,
-                        date: new Date / 1E3 | 0
+                        date: new Date / 1000 | 0
                     });
 
                     appendMessage(message);
@@ -247,12 +241,12 @@ angular.module('angularTalk', [])
                     return found;
                 }
 
-                function loadMessages(params, onFinish, first) {
+                function loadMessages(params, onFinish) {
                     $scope.loading = true;
                     $http.get(settings.ajaxEndpoint, {
                         params: angular.extend({
-                            since: lastID,
-                            dir: 'ASC',
+                            since: firstID,
+                            dir: 'DESC',
                             count: 25
                         }, params)
                     }).then(function onMessagesReceived(httpResponse) {
@@ -302,19 +296,19 @@ angular.module('angularTalk', [])
 
                 //Auto update messages
                 function reload() {
-                    if ($scope.settings.updateInterval) {
+                    if (settings.updateInterval) {
                         $timeout(function () {
                             loadMessages({}, reload)
-                        }, $scope.settings.updateInterval);
+                        }, settings.updateInterval);
                     }
 
                 }
 
-                loadMessages({}, reload, true);
+                loadMessages({}, reload);
 
                 //Remove autoupdate interval
                 $scope.$on('$destroy', function () {
-                    $scope.settings.updateInterval = false;
+                    settings.updateInterval = false;
                 });
             }
         };
@@ -415,5 +409,5 @@ angular.module('angularTalk', [])
 
         return status;
     }).run(['windowStatus', function () {
-        //Needed to execute windowStatus at startup
-    }]);
+    //Needed to execute windowStatus at startup
+}]);

@@ -10,20 +10,12 @@ angular.module('angularTalk', [])
     .directive('angularTalk', ['$http', '$timeout', 'windowStatus', function ($http, $timeout, windowStatus) {
         return {
             restrict: 'AC',
-            scope: true,
+            scope: {
+                settings: '='
+            },
             templateUrl: 'angularTalk/room.html',
             link: function ($scope, $element, $attributes) {
-                //Load settings
-                var settings = $scope.settings = {};
-                angular.forEach($attributes, function (val, name) {
-                    if (val == '') {
-                        $scope.settings[name] = true;
-                    } else if (['strings', 'sender', 'soundOnNew'].indexOf(name) >= 0) {
-                        $scope.settings[name] = $scope.$eval(val);
-                    } else {
-                        $scope.settings[name] = val;
-                    }
-                });
+                var settings = $scope.settings;
 
                 if (!settings.ajaxEndpoint) {
                     throw new Error('Invalid ajax endpoint');
@@ -110,9 +102,11 @@ angular.module('angularTalk', [])
                 };
 
                 $scope.submit = function submit() {
+                    if (!$scope.message.content)return;
+
                     var message = angular.extend($scope.message, {
                         author: settings.sender,
-                        date: new Date / 1E3 | 0
+                        date: new Date / 1000 | 0
                     });
 
                     appendMessage(message);
@@ -247,12 +241,12 @@ angular.module('angularTalk', [])
                     return found;
                 }
 
-                function loadMessages(params, onFinish, first) {
+                function loadMessages(params, onFinish) {
                     $scope.loading = true;
                     $http.get(settings.ajaxEndpoint, {
                         params: angular.extend({
-                            since: lastID,
-                            dir: 'ASC',
+                            since: firstID,
+                            dir: 'DESC',
                             count: 25
                         }, params)
                     }).then(function onMessagesReceived(httpResponse) {
@@ -302,19 +296,19 @@ angular.module('angularTalk', [])
 
                 //Auto update messages
                 function reload() {
-                    if ($scope.settings.updateInterval) {
+                    if (settings.updateInterval) {
                         $timeout(function () {
                             loadMessages({}, reload)
-                        }, $scope.settings.updateInterval);
+                        }, settings.updateInterval);
                     }
 
                 }
 
-                loadMessages({}, reload, true);
+                loadMessages({}, reload);
 
                 //Remove autoupdate interval
                 $scope.$on('$destroy', function () {
-                    $scope.settings.updateInterval = false;
+                    settings.updateInterval = false;
                 });
             }
         };
@@ -415,8 +409,8 @@ angular.module('angularTalk', [])
 
         return status;
     }).run(['windowStatus', function () {
-        //Needed to execute windowStatus at startup
-    }]);
+    //Needed to execute windowStatus at startup
+}]);
 
 angular.module("angularTalk").run(["$templateCache", function($templateCache) { 
 $templateCache.put("angularTalk\/messages.html","<div\nng-repeat-start=\"message in messages | orderBy:'+date' track by message.id || $id(message)\"\nclass=\"moment\"\nng-show=\"settings.groupMessages && ($index==0 || (message.date - previousMessage(message).date)>30000)\">\n<time\nclass=\"relative\" datetime=\"{{ ::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z' }}\">{{ ::message.date*1000 | date:'medium' }}<\/time><\/div><div\nng-repeat-end class=\"message\" ng-class=\"{\n'from-sender': message.author.id==settings.sender.id,\nreversed:settings.reverseSenderMessages && message.author.id==settings.sender.id,\nactive:message.isActive,\nerror:message.isError}\" ng-click=\"message.isActive=!message.isActive\">\n<a\nng-show=\"settings.showFaces\" class=\"message-img\" ng-href=\"{{::message.author.href}}\" title=\"{{::message.author.name}}\">\n<img\nng-src=\"{{::message.author.icon}}\" alt=\"{{::message.author.name}}\">\n<\/a><div\nclass=\"message-wrapper\"><div\nclass=\"message-body\" title=\"{{ ::message.date*1000 | date:'medium' }}\"><div\nng-hide=\"message.isEditing\">\n{{ message.content }}<div\nclass=\"message-info\" ng-show=\"!settings.groupMessages || message.isActive || message.isSending || message.isError\">\n<span\nng-show=\"message.isError\">\n<a\nclass=\"retry-send\" ng-click=\"save(message)\">\n<i\nclass=\"icon icon-warning fa fa-warning\"><\/i>\n{{ ::settings.strings.retrySend }}\n<\/a>\n<span\nclass=\"bullet\">\u2022<\/span>\n<\/span>\n<span\nng-show=\"message.isSending\">\n<span\nclass=\"loader icon icon-circle-o-notch icon-spin fa fa-circle-o-notch fa-spin\"><\/span>\n<span\nclass=\"bullet\">\u2022<\/span>\n<\/span>\n<span\nng-show=\"::settings.showUserName\">\n<a\nclass=\"author\" ng-href=\"{{ ::message.author.href }}\">\n{{ ::message.author.name }}\n<\/a>\n<span\nclass=\"bullet\">\u2022<\/span>\n<\/span>\n<span\nng-show=\"::replyLevel < settings.replyLevels-1 && settings.allowReplies && message.id && !settings.readOnly\">\n<a\nclass=\"reply\" ng-click=\"reply(message)\">\n<i\nclass=\"icon icon-reply fa fa-reply\"><\/i>\n{{ ::settings.strings.reply }}\n<\/a>\n<span\nclass=\"bullet\">\u2022<\/span>\n<\/span>\n<span\nng-show=\"::settings.sender.isModerator || message.author.id == settings.sender.id\">\n<a\nclass=\"edit\" ng-click=\"edit(message)\">\n<i\nclass=\"icon icon-edit fa fa-edit\"><\/i>\n{{ ::settings.strings.edit }}\n<\/a>\n<span\nclass=\"bullet\">\u2022<\/span>\n<a\nclass=\"delete\" ng-click=\"delete(message)\">\n<i\nclass=\"icon icon-remove fa fa-remove\"><\/i>\n{{ ::settings.strings.delete }}\n<\/a>\n<span\nclass=\"bullet\">\u2022<\/span>\n<\/span>\n<time\nclass=\"relative\" datetime=\"{{::message.date*1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}\">{{::message.date*1000 | date:'medium'}}<\/time><\/div><\/div><div\nng-if=\"message.isEditing\"><textarea ng-model=\"message.content\"\n                       ng-keyup=\"messageKeyPress($event)\"\n                       ng-focus=\"current.message = message\"\n                       placeholder=\"{{ ::settings.strings.messagePlaceholder }}\"><\/textarea><div\nclass=\"tools\">\n<a\nng-click=\"cancelEdit(message)\">{{ ::settings.strings.cancel }}<\/a><button\ntype=\"button\" class=\"submit\" ng-click=\"save(message)\" ng-disabled=\"!message.content\">\n{{ message.id ? settings.strings.save : settings.strings.submit }}\n<\/button><\/div><\/div><\/div>\n<ng-include\nng-if=\"message.$replies.length>0 && settings.allowReplies && replyLevel < settings.replyLevels-1\"\nsrc=\"'angularTalk\/messages.html'\"\ninit=\"messages = message.$replies; replyLevel = replyLevel+1\"><\/ng-include><\/div><\/div>");
