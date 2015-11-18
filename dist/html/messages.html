@@ -49,7 +49,7 @@
 
                     <!-- Reply -->
                 <span ng-show="::replyLevel < settings.replyLevels-1 && settings.allowReplies && message.id && !settings.readOnly">
-                    <a class="reply" ng-click="reply(message)">
+                    <a class="reply" ng-click="reply(message)" title="{{ ::settings.strings.reply }}">
                         <i class="icon icon-reply fa fa-reply"></i>
                         <span class="text-info">{{ ::settings.strings.reply }}</span>
                     </a>
@@ -59,12 +59,12 @@
 
                     <!-- Edit -->
                 <span ng-show="::settings.sender.isModerator || message.author.id == settings.sender.id">
-                        <a class="edit" ng-click="edit(message)">
+                        <a class="edit" ng-click="edit(message)" title="{{ ::settings.strings.edit }}">
                             <i class="icon icon-edit fa fa-edit"></i>
                             <span class="text-info">{{ ::settings.strings.edit }}</span>
                         </a>
                         <span class="bullet">•</span>
-                        <a class="delete" ng-click="delete(message)">
+                        <a class="delete" ng-click="delete(message)" title="{{ ::settings.strings.delete }}">
                             <i class="icon icon-remove fa fa-remove"></i>
                             <span class="text-info">{{ ::settings.strings.delete }}</span>
                         </a>
