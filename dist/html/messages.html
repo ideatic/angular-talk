@@ -13,7 +13,7 @@
                 error:message.isError}" ng-click="message.isActive=!message.isActive">
 
     <!-- Icon -->
-    <a ng-show="settings.showFaces" class="message-img" ng-href="{{::message.author.href}}" title="{{::message.author.name}}">
+    <a ng-show="settings.showFaces" class="message-img" ng-href="{{::message.author.url}}" title="{{::message.author.name}}">
         <img ng-src="{{::message.author.icon}}" alt="{{::message.author.name}}">
     </a>
 
@@ -41,7 +41,7 @@
 
                 <!-- Author -->
                 <span ng-show="::settings.showUserName">
-                    <a class="author" ng-href="{{ ::message.author.href }}">
+                    <a class="author" ng-href="{{ ::message.author.url }}">
                         {{ ::message.author.name }}
                     </a>
                     <span class="bullet">•</span>
